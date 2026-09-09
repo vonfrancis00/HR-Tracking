@@ -31,7 +31,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
           <NavLink
             key={to}
             to={to}
-            end={to === "/"}
+            end
             onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${

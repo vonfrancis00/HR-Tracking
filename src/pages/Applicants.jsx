@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Search, Trash2, Users, CalendarDays, CheckCheck, BriefcaseBusiness, ChevronLeft, ChevronRight, RefreshCw, SlidersHorizontal, X } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createApplicant, deleteApplicant, getApplicants, updateApplicant } from "../services/api";
 import ApplicantModal from "../components/ApplicantModal";
 import StatusBadge from "../components/StatusBadge";
@@ -16,6 +16,7 @@ function formatDate(value) {
 
 export default function Applicants() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [applicants, setApplicants] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -35,12 +36,13 @@ export default function Applicants() {
     setLoading(true);
     setLoadError("");
     try { setApplicants(await getApplicants()); }
-    catch { setLoadError("Applicant records could not be loaded. Please try again."); }
+    catch (error) { setLoadError(error.message || "Applicant records could not be loaded. Please try again."); }
     finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
   useEffect(() => {
     if (location.pathname === "/applicants/new") setModal({ open: true, applicant: null });
+    else setModal({ open: false, applicant: null });
   }, [location.pathname]);
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -72,6 +74,13 @@ export default function Applicants() {
   function openModal(applicant = null) {
     setActionError(""); setNotice(""); setModal({ open: true, applicant });
   }
+  function closeModal() {
+    setModal({ open: false, applicant: null });
+    setActionError("");
+    if (location.pathname === "/applicants/new") {
+      navigate("/applicants", { replace: true });
+    }
+  }
   function resetFilters() { setSearch(""); setStatus(""); setSource(""); setPage(1); }
   async function save(data) {
     if (mutationPending.current) return;
@@ -80,7 +89,7 @@ export default function Applicants() {
       if (modal.applicant) await updateApplicant(modal.applicant.id, data);
       else await createApplicant(data);
       setNotice(modal.applicant ? "Applicant updated successfully." : "Applicant added successfully.");
-      setModal({ open: false, applicant: null });
+      closeModal();
       await load();
     } catch { setActionError("Could not save the applicant. Please try again."); }
     finally { mutationPending.current = false; setBusy(false); }
@@ -124,7 +133,7 @@ export default function Applicants() {
         <footer className="flex flex-col justify-between gap-3 border-t border-slate-100 px-5 py-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-6"><span aria-live="polite">{loading ? "Loading records…" : loadError ? "Data unavailable" : `Showing ${filtered.length ? offset + 1 : 0}–${Math.min(offset + pageSize, filtered.length)} of ${filtered.length} applicants`}</span><div className="flex flex-wrap items-center gap-3"><label className="flex items-center gap-2">Rows<select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="rounded-md border border-slate-200 bg-white p-1.5 focus-visible:outline-indigo-500">{[10, 25, 50].map((size) => <option key={size}>{size}</option>)}</select></label><div className="flex items-center gap-2"><button aria-label="Previous page" disabled={currentPage === 1 || loading || !!loadError} onClick={() => setPage(currentPage - 1)} className={`rounded-lg border border-slate-200 p-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35 ${focus}`}><ChevronLeft size={15} /></button><span className="tabular-nums">{currentPage} / {pageCount}</span><button aria-label="Next page" disabled={currentPage === pageCount || loading || !!loadError} onClick={() => setPage(currentPage + 1)} className={`rounded-lg border border-slate-200 p-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35 ${focus}`}><ChevronRight size={15} /></button></div></div></footer>
       </section>
       {actionError && <div role="alert" className="fixed bottom-5 left-1/2 z-[100] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-lg">{actionError}<button aria-label="Dismiss error" onClick={() => setActionError("")} className={`rounded p-1 ${focus}`}><X size={16} /></button></div>}
-      <ApplicantModal open={modal.open} applicant={modal.applicant} onClose={() => { if (!busy) { setModal({ open: false, applicant: null }); setActionError(""); } }} onSave={save} />
+      <ApplicantModal open={modal.open} applicant={modal.applicant} onClose={() => { if (!busy) closeModal(); }} onSave={save} />
     </div>
   );
 }
