@@ -55,12 +55,12 @@ function Field({ label, name, value, onChange, type = "text", options, placehold
     <label className="block">
       <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
       {options ? (
-        <select name={name} value={value || ""} onChange={onChange} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+        <select name={name} value={value || ""} onChange={onChange} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-blue-600 focus:ring-2 focus:ring-brand-blue-600/20">
           <option value="">Select...</option>
           {options.map((x) => <option key={x}>{x}</option>)}
         </select>
       ) : (
-        <input name={name} value={value || ""} onChange={onChange} type={type} placeholder={placeholder} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+        <input name={name} value={value || ""} onChange={onChange} type={type} placeholder={placeholder} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-brand-blue-600 focus:ring-2 focus:ring-brand-blue-600/20" />
       )}
     </label>
   );
@@ -68,8 +68,8 @@ function Field({ label, name, value, onChange, type = "text", options, placehold
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <h3 className="mb-4 text-sm font-bold text-slate-900">{title}</h3>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <h3 className="mb-5 border-b border-slate-100 pb-3 text-sm font-bold text-brand-blue-900">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2">{children}</div>
     </section>
   );
@@ -87,17 +87,17 @@ export default function ApplicantModal({ open, applicant, onClose, onSave }) {
   const change = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-blue-900/50 p-4 backdrop-blur-sm">
       <div className="mx-auto my-4 max-w-5xl rounded-3xl bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-3xl border-b border-slate-200 bg-white px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">{applicant ? "Edit Applicant" : "Add Applicant"}</h2>
             <p className="text-xs text-slate-500">Complete the recruitment tracking information.</p>
           </div>
-          <button onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={20} /></button>
+          <button aria-label="Close applicant form" onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={20} /></button>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="space-y-5 bg-slate-50/70 p-5 sm:p-7">
           <Section title="1. Applicant Profile">
             <Field label="Applicant Name" name="applicantName" value={form.applicantName} onChange={change} />
             <Field label="Contact Number" name="contactNumber" value={form.contactNumber} onChange={change} />
@@ -160,7 +160,7 @@ export default function ApplicantModal({ open, applicant, onClose, onSave }) {
 
         <div className="flex justify-end gap-3 rounded-b-3xl border-t border-slate-200 bg-white px-5 py-4">
           <button onClick={onClose} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-          <button onClick={() => onSave(form)} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Save Applicant</button>
+          <button onClick={() => onSave(form)} className="primary-button rounded-xl bg-brand-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-blue-700">Save Applicant</button>
         </div>
       </div>
     </div>

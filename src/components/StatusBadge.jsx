@@ -1,26 +1,27 @@
 const statusStyles = {
   "New Applicant": "bg-slate-100 text-slate-700",
-  "For Screening": "bg-blue-100 text-blue-700",
-  "For Initial Interview": "bg-indigo-100 text-indigo-700",
-  "For Recommendation": "bg-violet-100 text-violet-700",
-  "Recommended for Final Interview": "bg-purple-100 text-purple-700",
-  "For Final Interview": "bg-amber-100 text-amber-700",
-  "Passed for Hiring": "bg-emerald-100 text-emerald-700",
-  "For Employment Processing": "bg-orange-100 text-orange-700",
-  "For Background Checking": "bg-cyan-100 text-cyan-700",
-  "Ready for Onboarding": "bg-green-100 text-green-700",
+  "For Screening": "bg-brand-blue-100 text-brand-blue-700",
+  "For Initial Interview": "bg-brand-blue-100 text-brand-blue-700",
+  "For Recommendation": "bg-brand-blue-100 text-brand-blue-700",
+  "Recommended for Final Interview": "bg-brand-blue-100 text-brand-blue-700",
+  "For Final Interview": "bg-brand-yellow-100 text-brand-yellow-700",
+  "Passed for Hiring": "bg-brand-green-100 text-brand-green-700",
+  "For Employment Processing": "bg-brand-yellow-100 text-brand-yellow-700",
+  "For Background Checking": "bg-brand-blue-100 text-brand-blue-700",
+  "Ready for Onboarding": "bg-brand-green-100 text-brand-green-700",
   "Not Qualified": "bg-red-100 text-red-700",
   "Not Recommended": "bg-red-100 text-red-700",
   "Not Selected": "bg-red-100 text-red-700",
   "Applicant Withdrew": "bg-slate-200 text-slate-700",
   "No Show": "bg-rose-100 text-rose-700",
-  "Requirements Incomplete": "bg-yellow-100 text-yellow-700",
-  "Talent Pool": "bg-teal-100 text-teal-700",
+  "Requirements Incomplete": "bg-brand-yellow-100 text-brand-yellow-700",
+  "Talent Pool": "bg-brand-green-100 text-brand-green-700",
 };
 
 export default function StatusBadge({ status }) {
   return (
-    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[status] || "bg-slate-100 text-slate-700"}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ring-current/10 ${statusStyles[status] || "bg-slate-100 text-slate-700"}`}>
+      <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-70" />
       {status}
     </span>
   );
