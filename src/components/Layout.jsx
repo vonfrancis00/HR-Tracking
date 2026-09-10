@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Menu, ChevronRight, CalendarDays } from "lucide-react";
+import { Menu, ChevronRight, CalendarDays, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 
-export default function Layout({ children }) {
+export default function Layout({ children, user, onLogout }) {
   const location = useLocation();
   const pageName = location.pathname === "/" ? "Overview" : "Applicants";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,12 +32,22 @@ export default function Layout({ children }) {
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden items-center gap-2 pr-2 text-xs text-slate-500 xl:flex"><CalendarDays size={15} />{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
             <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-blue-50 ring-4 ring-white text-sm font-bold text-brand-blue-900">HR</div>
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-blue-50 ring-4 ring-white text-sm font-bold text-brand-blue-900">
+                {(user?.fullName || user?.email || "HR").slice(0, 2).toUpperCase()}
+              </div>
               <div className="hidden md:block">
-                <div className="text-sm font-semibold text-slate-800">F.V. Pupos</div>
-                <div className="text-xs text-slate-500">HR Administrator</div>
+                <div className="text-sm font-semibold text-slate-800">{user?.fullName || "Demo User"}</div>
+                <div className="text-xs text-slate-500">{user?.role || "Super Admin"}</div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-red-600"
+            >
+              <LogOut size={14} />
+              <span className="hover:text-white hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 
