@@ -70,7 +70,7 @@ export default function Dashboard() {
       <header className="page-heading flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-blue-600">Recruitment workspace</p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">Dashboard overview</h1>
+          <h1 className="text-3xl font-extrabold uppercase tracking-tight text-slate-950">Dashboard overview</h1>
           <p className="mt-2 text-sm text-slate-500">A clear view of your talent pipeline, from first contact to onboarding.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -106,10 +106,10 @@ export default function Dashboard() {
             <div><h2 className="font-semibold text-slate-900">Recruitment pipeline</h2><p className="mt-1 text-xs text-slate-500">Select a stage to filter the applicants below.</p></div>
             <span className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">All time</span>
           </div>
-          <div className="space-y-1 p-3 sm:px-4">{stages.map(([key, label], index) => <button key={key} disabled={loading || !!error} aria-pressed={status === key} onClick={() => setStatus(status === key ? "" : key)} className={`grid w-full grid-cols-[minmax(0,1fr)_60px_28px] items-center gap-3 rounded-lg px-3 py-2.5 text-left transition sm:grid-cols-[minmax(0,1fr)_120px_30px] ${status === key ? "bg-brand-blue-50 text-brand-blue-700" : "text-slate-600 hover:bg-slate-50"} ${focus}`}>
-            <span className="flex items-center gap-3 text-xs sm:text-sm"><span className="text-[10px] text-slate-400 tabular-nums">{String(index + 1).padStart(2, "0")}</span>{label}</span>
-            <span className="h-1.5 overflow-hidden rounded-full bg-slate-100"><span className={`block h-full rounded-full ${index === stages.length - 1 ? "bg-brand-green-500" : "bg-brand-blue-500"}`} style={{ width: `${percentage(counts[key] || 0)}%` }} /></span>
-            <span className="text-right text-sm font-semibold tabular-nums">{loading || error ? "—" : counts[key] || 0}</span>
+          <div className="pipeline-list p-3 sm:px-4">{stages.map(([key, label], index) => <button key={key} disabled={loading || !!error} aria-pressed={status === key} onClick={() => setStatus(status === key ? "" : key)} className={`pipeline-stage ${status === key ? "is-active" : ""} ${focus}`}>
+            <span className="stage-label text-xs sm:text-sm"><span className="stage-index text-[10px] tabular-nums">{String(index + 1).padStart(2, "0")}</span>{label}</span>
+            <span className="pipeline-visual"><span className={`pipeline-bar ${index === stages.length - 1 ? "final" : "primary"}`} style={{ width: `${percentage(counts[key] || 0)}%` }} /></span>
+            <span className="pipeline-count text-sm font-semibold tabular-nums">{loading || error ? "—" : counts[key] || 0}</span>
           </button>)}</div>
           <p className="border-t border-slate-100 px-6 py-3 text-[11px] leading-5 text-slate-500">Current stage distribution · Bars show each stage’s share of all applicants.</p>
         </section>
