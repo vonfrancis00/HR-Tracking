@@ -16,6 +16,49 @@
 // =====================================================
 
 const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+export const isConnected = Boolean(API_URL);
+const SESSION_KEY = "applicant-tracker-session";
+let sessionToken = typeof window !== "undefined" ? window.sessionStorage.getItem(SESSION_KEY) || "" : "";
+
+async function passwordProof(email, password) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", iterations: 600000,
+    salt: encoder.encode("applicant-tracker:v1:" + email.trim().toLowerCase()) }, key, 256);
+  return Array.from(new Uint8Array(bits), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function login(email, password) {
+  if (!API_URL) {
+    if (email.trim().toLowerCase() !== "superadmin@demo.local" || password !== "demo1234") {
+      throw new Error("Invalid demo email or password.");
+    }
+    return { userId: "demo", fullName: "Demo Super Admin", email: "superadmin@demo.local", role: "Super Admin", status: "Active" };
+  }
+  const result = await postRequest("login", { email: email.trim().toLowerCase(), password, passwordProof: await passwordProof(email, password) });
+  sessionToken = result.token;
+  window.sessionStorage.setItem(SESSION_KEY, sessionToken);
+  return result.user;
+}
+
+export async function restoreSession() {
+  if (!sessionToken || !API_URL) return null;
+  try { return await postRequest("session"); }
+  catch { sessionToken = ""; window.sessionStorage.removeItem(SESSION_KEY); return null; }
+}
+
+export async function logout() {
+  const request = API_URL && sessionToken ? postRequest("logout") : Promise.resolve();
+  sessionToken = "";
+  window.sessionStorage.removeItem(SESSION_KEY);
+  await request;
+}
+
+export async function registerUser(data) {
+  if (!API_URL) throw new Error("Connect Google Sheets to register users.");
+  const { password, confirmPassword, ...profile } = data;
+  return postRequest("registerUser", { ...profile, passwordProof: await passwordProof(data.email, password) });
+}
 const STORAGE_KEY = "applicant-tracker-local-data";
 const DEFAULT_LOCAL_APPLICANTS = [
   {
@@ -195,6 +238,7 @@ async function getRequest(action, params = {}) {
   const url = new URL(API_URL);
 
   url.searchParams.set("action", action);
+  if (sessionToken) url.searchParams.set("token", sessionToken);
 
   Object.entries(params).forEach(([key, value]) => {
     if (
@@ -252,6 +296,7 @@ async function postRequest(action, data = {}) {
   const params = new URLSearchParams();
 
   params.append("action", action);
+  if (sessionToken) params.append("token", sessionToken);
 
   Object.entries(data).forEach(([key, value]) => {
     if (value === undefined || value === null) {

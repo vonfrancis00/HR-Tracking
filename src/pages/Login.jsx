@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
 import "./Login.css";
-import { getUsers } from "../services/api";
+import { login, isConnected } from "../services/api";
 
 const DEMO_ACCOUNT = {
   email: "superadmin@demo.local",
@@ -9,8 +9,8 @@ const DEMO_ACCOUNT = {
 };
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState(DEMO_ACCOUNT.email);
-  const [password, setPassword] = useState(DEMO_ACCOUNT.password);
+  const [email, setEmail] = useState(isConnected ? "" : DEMO_ACCOUNT.email);
+  const [password, setPassword] = useState(isConnected ? "" : DEMO_ACCOUNT.password);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -21,44 +21,9 @@ export default function Login({ onLogin }) {
     setError("");
 
     try {
-      const normalizedEmail = email.trim().toLowerCase();
-      const normalizedPassword = password.trim();
-
-      if (
-        normalizedEmail === DEMO_ACCOUNT.email &&
-        normalizedPassword === DEMO_ACCOUNT.password
-      ) {
-        const users = (await getUsers().catch(() => [])) || [];
-        const matchedUser =
-          users.find(
-            (user) =>
-              String(user.email || "").trim().toLowerCase() === normalizedEmail
-          ) || {
-            userId: "USR-demo-super-admin",
-            fullName: "Demo Super Admin",
-            email: DEMO_ACCOUNT.email,
-            role: "Super Admin",
-            department: "Administration",
-            status: "Active",
-          };
-
-        onLogin({
-          ...matchedUser,
-          fullName: matchedUser.fullName || "Demo Super Admin",
-          email: matchedUser.email || DEMO_ACCOUNT.email,
-          role: matchedUser.role || "Super Admin",
-          department: matchedUser.department || "Administration",
-          status: matchedUser.status || "Active",
-        });
-
-        return;
-      }
-
-      setError(
-        "Invalid demo credentials. Use superadmin@demo.local and demo1234."
-      );
-    } catch {
-      setError("Unable to load the demo account. Please try again.");
+      onLogin(await login(email, password));
+    } catch (err) {
+      setError(err.message || "Unable to sign in. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -122,11 +87,11 @@ export default function Login({ onLogin }) {
             {error && <p id="login-error" className="login-error" role="alert">{error}</p>}
 
             <button type="submit" disabled={busy} className="login-submit">
-              {busy ? <><LoaderCircle className="login-spinner" size={18} aria-hidden="true" /> Signing in?</> : <>Sign in <ArrowRight size={18} aria-hidden="true" /></>}
+              {busy ? <><LoaderCircle className="login-spinner" size={18} aria-hidden="true" /> Signing in...</> : <>Sign in <ArrowRight size={18} aria-hidden="true" /></>}
             </button>
           </form>
 
-          <details className="login-demo">
+          {!isConnected && <details className="login-demo">
             <summary><span className="login-demo-badge">DEMO</span> Explore the workspace</summary>
             <div className="login-demo-content">
               <p>Your demo account is already filled in.</p>
@@ -135,7 +100,7 @@ export default function Login({ onLogin }) {
                 <div><dt>Password</dt><dd>{DEMO_ACCOUNT.password}</dd></div>
               </dl>
             </div>
-          </details>
+          </details>}
         </section>
         <p className="login-access-note">Need access? Contact your HR administrator.</p>
       </main>

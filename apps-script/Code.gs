@@ -454,10 +454,11 @@ function doGet(e) {
   try {
     const p = (e && e.parameter) || {};
     const action = clean_(p.action || "getApplicants");
+    requireSession_(p.token);
 
     switch (action) {
       case "setup":
-        return json_(setupSheets());
+        throw new Error("Run setupSheets from the Apps Script editor.");
 
       case "getApplicants":
         return json_(getApplicants());
@@ -491,6 +492,7 @@ function doGet(e) {
         return json_(getStageRecords_("Status_History", p.applicantId));
 
       case "getUsers":
+        requireSuperAdmin_(p.token);
         return json_(objects_("Users"));
 
       case "getSettings":
@@ -526,8 +528,21 @@ function doPost(e) {
   try {
     const payload = parsePost_(e);
     const action = clean_(payload.action);
+    if (action === "login") return json_(loginUser_(payload));
+    const actor = requireSession_(payload.token);
+    if (normalizeKey_(actor.role) === "viewer" && ["session", "logout"].indexOf(action) < 0) {
+      throw new Error("Viewer accounts cannot modify records.");
+    }
 
     switch (action) {
+      case "session":
+        return json_(actor);
+      case "logout":
+        PropertiesService.getScriptProperties().deleteProperty("session:" + payload.token);
+        return json_({ loggedOut: true });
+      case "registerUser":
+        requireSuperAdmin_(payload.token);
+        return json_(registerUser_(payload));
       case "createApplicant":
         return json_(createApplicant(payload));
 
@@ -1391,4 +1406,120 @@ function authorizeSpreadsheet() {
     spreadsheetName: name,
     spreadsheetId: ss.getId()
   };
+}
+
+/* Account profiles retain the seven Users columns. Credentials and sessions
+ * are private Script Properties, never returned by the Users endpoint. */
+function activeUsers_() {
+  return objects_("Users").filter(function(user) { return clean_(user.email); });
+}
+
+function requireSession_(token) {
+  const props = PropertiesService.getScriptProperties();
+  const key = "session:" + clean_(token);
+  const stored = props.getProperty(key);
+  const session = stored ? JSON.parse(stored) : null;
+  if (!session || session.expiresAt <= Date.now()) {
+    if (stored) props.deleteProperty(key);
+    throw new Error("Your session has expired. Please sign in again.");
+  }
+  const user = activeUsers_().find(function(item) { return item.userId === session.userId; });
+  if (!user || normalizeKey_(user.status) !== "active") throw new Error("Your account is inactive. Contact your administrator.");
+  return user;
+}
+
+function requireSuperAdmin_(token) {
+  const user = requireSession_(token);
+  if (normalizeKey_(user.role) !== "super admin") {
+    throw new Error("Only Super Admin accounts can manage users.");
+  }
+  return user;
+}
+
+function credentialHash_(proof) {
+  // The client applies PBKDF2-SHA256 with 600,000 iterations. Hash the
+  // resulting login proof again so stored values cannot be replayed.
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, proof)
+    .map(function(byte) { return (byte & 255).toString(16).padStart(2, "0"); }).join("");
+}
+
+function sameSecret_(a, b) {
+  a = String(a || ""); b = String(b || "");
+  let difference = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) difference |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return difference === 0;
+}
+
+function registerUser_(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try { return registerUserLocked_(data); }
+  finally { lock.releaseLock(); }
+}
+
+function registerUserLocked_(data) {
+  const email = normalizeKey_(data.email);
+  const fullName = clean_(data.fullName);
+  const role = clean_(data.role);
+  const status = clean_(data.status);
+  if (!fullName || fullName.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid full name and email.");
+  if (!/^[a-f0-9]{64}$/.test(data.passwordProof || "")) throw new Error("A valid password is required.");
+  if (["Super Admin", "Admin", "HR", "Viewer"].indexOf(role) < 0) throw new Error("Invalid role.");
+  if (["Active", "Inactive"].indexOf(status) < 0) throw new Error("Invalid status.");
+  if (activeUsers_().some(function(user) { return normalizeKey_(user.email) === email; })) throw new Error("A user with this email already exists.");
+  const department = clean_(data.department);
+  if (department.length > 150 || /^[=+@-]/.test(fullName) || /^[=+@-]/.test(department) || /^[=+@-]/.test(email)) throw new Error("Name, email and department must be plain text.");
+  const user = { userId: generateId_("USR"), fullName: fullName, email: email,
+    role: role, department: department, status: status, createdAt: now_() };
+  const props = PropertiesService.getScriptProperties();
+  const key = "credential:" + user.userId;
+  props.setProperty(key, credentialHash_(data.passwordProof));
+  try { appendObject_("Users", user); }
+  catch (err) { props.deleteProperty(key); throw err; }
+  return user;
+}
+
+function loginUser_(data) {
+  const email = normalizeKey_(data.email);
+  const proof = clean_(data.passwordProof);
+  if (!email || !/^[a-f0-9]{64}$/.test(proof)) throw new Error("Invalid email or password.");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const cache = CacheService.getScriptCache();
+    const attemptKey = "login-attempt:" + credentialHash_(email);
+    const attempts = Number(cache.get(attemptKey) || 0);
+    if (attempts >= 10) throw new Error("Too many sign-in attempts. Try again in 15 minutes.");
+    let users = activeUsers_();
+    let user = users.find(function(item) { return normalizeKey_(item.email) === email; });
+    // One-time bootstrap: the owner sets these two private Script Properties.
+    if (!users.length && normalizeKey_(props.getProperty("INITIAL_ADMIN_EMAIL")) === email &&
+        sameSecret_(data.password, props.getProperty("INITIAL_ADMIN_PASSWORD")) &&
+        String(props.getProperty("INITIAL_ADMIN_PASSWORD") || "").length < 12) {
+      throw new Error("Administrator setup requires a password of at least 12 characters. Update INITIAL_ADMIN_PASSWORD in Apps Script Project Settings, save it, then sign in with the new password.");
+    }
+    if (!users.length && normalizeKey_(props.getProperty("INITIAL_ADMIN_EMAIL")) === email &&
+        String(props.getProperty("INITIAL_ADMIN_PASSWORD") || "").length >= 12 &&
+        sameSecret_(data.password, props.getProperty("INITIAL_ADMIN_PASSWORD"))) {
+      user = registerUserLocked_({ email: email, fullName: "Administrator", role: "Super Admin",
+        department: "Administration", status: "Active", passwordProof: proof });
+      props.deleteProperty("INITIAL_ADMIN_PASSWORD");
+      props.deleteProperty("INITIAL_ADMIN_EMAIL");
+    }
+    const stored = user && props.getProperty("credential:" + user.userId);
+    if (!stored || !sameSecret_(stored, credentialHash_(proof)) || normalizeKey_(user.status) !== "active") {
+      cache.put(attemptKey, String(attempts + 1), 900);
+      throw new Error("Invalid email or password, or account is inactive.");
+    }
+    cache.remove(attemptKey);
+    // Prune expired sessions to stay within Script Properties storage limits.
+    const all = props.getProperties();
+    Object.keys(all).filter(function(key) { return key.indexOf("session:") === 0; }).forEach(function(key) {
+      if (JSON.parse(all[key]).expiresAt <= Date.now()) props.deleteProperty(key);
+    });
+    const token = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty("session:" + token, JSON.stringify({ userId: user.userId, expiresAt: Date.now() + 8 * 60 * 60 * 1000 }));
+    return { user: user, token: token };
+  } finally { lock.releaseLock(); }
 }

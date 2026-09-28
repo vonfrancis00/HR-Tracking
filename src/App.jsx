@@ -5,46 +5,33 @@ import Dashboard from "./pages/Dashboard";
 import Applicants from "./pages/Applicants";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
-
-const AUTH_STORAGE_KEY = "applicant-tracker-user";
+import Settings from "./pages/Settings";
+import { isSuperAdmin } from "./services/permissions";
+import { restoreSession, logout } from "./services/api";
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    try {
-      return JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) || "null");
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    window.localStorage.removeItem("applicant-tracker-user");
+    restoreSession().then(setUser).finally(() => setLoading(false));
+  }, []);
 
-    if (user) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-      return;
-    }
-
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
-  }, [user]);
+  if (loading) return <div className="p-10 text-center" role="status">Loading your workspace...</div>;
 
   if (!user) {
     return <Login onLogin={setUser} />;
   }
 
   return (
-    <Layout user={user} onLogout={() => setUser(null)}>
+    <Layout user={user} onLogout={() => { logout().catch(() => {}); setUser(null); }}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/applicants" element={<Applicants />} />
         <Route path="/applicants/new" element={<Applicants />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={isSuperAdmin(user) ? <Settings user={user} /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

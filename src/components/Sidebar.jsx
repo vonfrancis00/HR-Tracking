@@ -1,8 +1,10 @@
+import { isSuperAdmin } from "../services/permissions";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
   FileText,
+  Settings,
   ArrowUpRight,
   X
 } from "lucide-react";
@@ -11,9 +13,10 @@ const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/applicants", label: "Applicants", icon: Users },
   { to: "/reports", label: "Reports", icon: FileText },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({ mobileOpen, onClose }) {
+export default function Sidebar({ mobileOpen, onClose, user }) {
   return (
     <aside className={`app-sidebar fixed inset-y-0 left-0 z-40 w-64 border-r border-white/10 bg-brand-blue-900 text-white transition-transform lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="flex h-20 shrink-0 items-center gap-3 border-b border-white/10 px-5">
@@ -29,7 +32,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       <button aria-label="Close navigation" onClick={onClose} className="absolute right-2 top-2 rounded-lg p-1 text-white/80 lg:hidden"><X size={16} /></button>
       <p className="px-6 pb-3 pt-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-200">Workspace</p>
       <nav aria-label="Main navigation" className="space-y-2 px-3">
-        {links.map(({ to, label, icon: Icon }) => (
+        {links.filter((link) => link.to !== "/settings" || isSuperAdmin(user)).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

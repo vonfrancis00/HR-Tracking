@@ -1,15 +1,37 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { test } from 'node:test';
+import { isSuperAdmin } from '../src/services/permissions.js';
+
+test('Settings access is restricted to Super Admin, including API user management', () => {
+  assert.equal(isSuperAdmin({ role: ' Super Admin ' }), true);
+  const { context: c } = backend();
+  for (const role of ['Admin', 'HR', 'Viewer']) {
+    assert.equal(isSuperAdmin({ role }), false);
+    const profile = { fullName: role, email: role.toLowerCase() + '@example.com', role, status: 'Active', passwordProof: 'a'.repeat(64) };
+    c.registerUser_(profile);
+    const { token } = c.loginUser_(profile);
+    assert.equal(c.doGet({ parameter: { action: 'getUsers', token } }).success, false);
+    assert.equal(c.doPost({ postData: { type: 'application/json', contents: JSON.stringify({ ...profile, action: 'registerUser', email: 'new@example.com', token }) } }).success, false);
+  }
+  assert.equal(isSuperAdmin(null), false);
+  const profile = { fullName: 'Owner', email: 'owner@example.com', role: 'Super Admin', status: 'Active', passwordProof: 'a'.repeat(64) };
+  c.registerUser_(profile);
+  const { token } = c.loginUser_(profile);
+  assert.equal(c.doGet({ parameter: { action: 'getUsers', token } }).success, true);
+});
 
 function backend() {
   const properties = new Map();
+  const cache = new Map();
   const context = vm.createContext({
-    PropertiesService: { getScriptProperties: () => ({ getProperty: (key) => properties.get(key), setProperty: (key, value) => properties.set(key, value) }) },
-    console: { log() {} },
-    Utilities: { getUuid: randomUUID, formatDate: (date) => date.toISOString() },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (key) => properties.get(key), setProperty: (key, value) => properties.set(key, value), deleteProperty: (key) => properties.delete(key), getProperties: () => Object.fromEntries(properties) }) },
+    CacheService: { getScriptCache: () => ({ get: (key) => cache.get(key), put: (key, value) => cache.set(key, value), remove: (key) => cache.delete(key) }) },
+    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: (text) => ({ setMimeType: () => JSON.parse(text) }) },
+    console: { log() {}, error() {} },
+    Utilities: { getUuid: randomUUID, formatDate: (date) => date.toISOString(), DigestAlgorithm: { SHA_256: 'sha256' }, computeDigest: (algorithm, text) => [...createHash(algorithm).update(text).digest()] },
     Session: { getActiveUser: () => ({ getEmail: () => 'tester' }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
   });
@@ -36,7 +58,7 @@ function backend() {
     }];
   }));
   context.SpreadsheetApp = { openById: () => ({ getSheetByName: (name) => sheets[name] }) };
-  return { context, sheets };
+  return { context, sheets, properties };
 }
 
 test('header mapping and applicant/stage writes retain IDs and HR recommendation', () => {
@@ -125,6 +147,7 @@ test('incompatible stage headers are reported without blocking applicant repair'
 test('frontend normalizes legacy and blank aliases and rejects unusable IDs', () => {
   const source = readFileSync(new URL('../src/services/api.js', import.meta.url), 'utf8')
     .replace('import.meta.env.VITE_APPS_SCRIPT_URL', '"https://example.invalid"')
+    .replaceAll('export const', 'const')
     .replaceAll('export async function', 'async function');
   const c = vm.createContext({ console });
   vm.runInContext(source, c);
@@ -134,4 +157,67 @@ test('frontend normalizes legacy and blank aliases and rejects unusable IDs', ()
   assert.equal(records[1].applicantId, 'APP-2');
   assert.throws(() => c.normalizeApplicantList([{ applicantName: 'Missing' }]), /missing or duplicate IDs/);
   assert.throws(() => c.normalizeApplicantList([{ id: 'same' }, { applicantId: 'same' }]), /missing or duplicate IDs/);
+});
+
+
+test('bootstrap, registration, sheet mapping and login enforce account access', () => {
+  const { context: c, sheets, properties } = backend();
+  properties.set('INITIAL_ADMIN_EMAIL', 'owner@example.com');
+  properties.set('INITIAL_ADMIN_PASSWORD', 'initial-password-123');
+  const post = (action, data = {}) => c.doPost({ postData: { type: 'application/json', contents: JSON.stringify({ action, ...data }) } });
+  assert.equal(post('registerUser').success, false);
+  assert.equal(c.doGet({ parameter: { action: 'getUsers' } }).success, false);
+  assert.equal(post('login', { email: 'owner@example.com', password: 'wrong', passwordProof: 'a'.repeat(64) }).success, false);
+  const admin = post('login', { email: ' OWNER@example.com ', password: 'initial-password-123', passwordProof: 'a'.repeat(64) });
+  assert.equal(admin.success, true);
+  assert.equal(properties.has('INITIAL_ADMIN_PASSWORD'), false);
+  assert.equal(sheets.Users.data[1].length, 7);
+  assert.equal(admin.data.user.role, 'Super Admin');
+  const profile = { fullName: 'Test User', email: 'team@example.com', role: 'HR', department: 'HR', status: 'Active', passwordProof: 'b'.repeat(64) };
+  const registered = post('registerUser', { ...profile, token: admin.data.token });
+  assert.equal(registered.success, true);
+  assert.deepEqual(sheets.Users.data[2].slice(1, 6), ['Test User', 'team@example.com', 'HR', 'HR', 'Active']);
+  assert.equal(registered.data.passwordProof, undefined);
+  assert.notEqual(properties.get('credential:' + registered.data.userId), profile.passwordProof);
+  assert.equal(post('registerUser', { ...profile, email: ' TEAM@example.com ', token: admin.data.token }).success, false);
+  assert.equal(post('login', { email: profile.email, passwordProof: 'c'.repeat(64) }).success, false);
+  const session = post('login', profile);
+  assert.equal(session.success, true);
+  assert.equal(post('session', { token: session.data.token }).data.email, profile.email);
+  assert.equal(post('registerUser', { ...profile, email: 'other@example.com', token: session.data.token }).success, false);
+  sheets.Users.data[2][5] = 'Inactive';
+  assert.equal(post('session', { token: session.data.token }).success, false);
+  assert.equal(post('login', profile).success, false);
+  sheets.Users.data[2][5] = 'Active';
+  assert.equal(post('logout', { token: session.data.token }).success, true);
+  assert.equal(post('session', { token: session.data.token }).success, false);
+  const expired = JSON.parse(properties.get('session:' + admin.data.token));
+  properties.set('session:' + admin.data.token, JSON.stringify({ ...expired, expiresAt: 1 }));
+  assert.equal(post('session', { token: admin.data.token }).success, false);
+});
+
+test('bootstrap explains a short configured password without creating an account', () => {
+  const { context: c, sheets, properties } = backend();
+  properties.set('INITIAL_ADMIN_EMAIL', 'owner@example.com');
+  properties.set('INITIAL_ADMIN_PASSWORD', 'short123');
+  const data = { email: 'owner@example.com', password: 'short123', passwordProof: 'a'.repeat(64) };
+  assert.throws(() => c.loginUser_(data), /at least 12 characters/);
+  assert.equal(sheets.Users.data.length, 1);
+  assert.equal(properties.has('INITIAL_ADMIN_PASSWORD'), true);
+  assert.throws(() => c.loginUser_({ ...data, password: 'incorrect' }), /Invalid email or password/);
+  properties.set('INITIAL_ADMIN_PASSWORD', 'longer-password-123');
+  assert.equal(c.loginUser_({ ...data, password: 'longer-password-123' }).user.role, 'Super Admin');
+});
+
+test('invalid profile data, inactive accounts and repeated bad logins are rejected', () => {
+  const { context: c } = backend();
+  const profile = { fullName: 'Test User', email: 'test@example.com', role: 'Admin', department: 'HR', status: 'Active', passwordProof: 'a'.repeat(64) };
+  assert.throws(() => c.registerUser_({ ...profile, email: 'invalid' }), /valid/);
+  assert.throws(() => c.registerUser_({ ...profile, fullName: '=IMPORTXML()' }), /plain text/);
+  assert.throws(() => c.registerUser_({ ...profile, role: 'Invalid' }), /role/);
+  assert.throws(() => c.registerUser_({ ...profile, status: 'Invalid' }), /status/);
+  assert.throws(() => c.registerUser_({ ...profile, passwordProof: '' }), /password/);
+  c.registerUser_(profile);
+  for (let i = 0; i < 10; i++) assert.throws(() => c.loginUser_({ ...profile, passwordProof: 'b'.repeat(64) }), /Invalid/);
+  assert.throws(() => c.loginUser_(profile), /Too many/);
 });

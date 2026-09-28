@@ -6,12 +6,12 @@ import "./Workspace.css";
 
 export default function Layout({ children, user, onLogout }) {
   const location = useLocation();
-  const pageName = location.pathname === "/" ? "Overview" : location.pathname === "/reports" ? "Reports" : "Applicants";
+  const pageName = location.pathname === "/" ? "Overview" : location.pathname === "/reports" ? "Reports" : location.pathname === "/settings" ? "Settings" : "Applicants";
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="app-shell workspace-shell min-h-screen">
-      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <Sidebar user={user} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       {mobileOpen && (
         <button
           aria-label="Close menu"
