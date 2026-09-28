@@ -17,6 +17,7 @@ export default function Login({ onLogin }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
 
@@ -106,7 +107,7 @@ export default function Login({ onLogin }) {
       </main>
 
       <footer className="login-footer">
-        <span>? {new Date().getFullYear()} Rural Bank of Medina, Inc.</span>
+        <span>&copy; {new Date().getFullYear()} Rural Bank of Medina, Inc.</span>
         <span>Made for people. Built for progress.</span>
       </footer>
     </div>
