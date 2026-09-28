@@ -103,9 +103,9 @@ export default function Applicants() {
   }
 
   return (
-    <div className="workspace-page mx-auto max-w-[1600px] space-y-6 pb-6">
+    <div className="applicants-page workspace-page mx-auto max-w-[1600px] space-y-6 pb-6">
       <header className="page-heading flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-        <div><p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-blue-600">Recruitment workspace</p><h1 className="text-3xl font-bold tracking-tight text-slate-950">Applicants</h1><p className="mt-2 text-sm text-slate-500">Your talent directory. Find candidates, review progress, and keep every record up to date.</p></div>
+        <div><p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-blue-600">PEOPLE & POSSIBILITIES</p><h1 className="text-3xl font-bold tracking-tight text-slate-950">Your next great team.</h1><p className="mt-2 text-sm text-slate-500">Every candidate, every conversation, every next step. All in one place.</p></div>
         <div className="flex shrink-0 items-center gap-2"><button aria-label="Refresh applicants" disabled={loading || busy} onClick={load} className={`rounded-xl border border-slate-200 bg-white p-3 text-slate-500 hover:bg-slate-100 disabled:opacity-50 ${focus}`}><RefreshCw size={17} className={loading ? "animate-spin motion-reduce:animate-none" : ""} /></button><button disabled={busy} onClick={() => openModal()} className={`primary-button inline-flex items-center gap-2 rounded-xl bg-brand-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-blue-700 disabled:opacity-50 ${focus}`}><Plus size={18} /> Add applicant</button></div>
       </header>
       {loadError && <div role="alert" className="flex flex-wrap justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{loadError}<button onClick={load} className={`font-semibold underline ${focus}`}>Try again</button></div>}

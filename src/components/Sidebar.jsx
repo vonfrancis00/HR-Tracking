@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
+  FileText,
   ArrowUpRight,
   X
 } from "lucide-react";
@@ -9,6 +10,7 @@ import {
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/applicants", label: "Applicants", icon: Users },
+  { to: "/reports", label: "Reports", icon: FileText },
 ];
 
 export default function Sidebar({ mobileOpen, onClose }) {

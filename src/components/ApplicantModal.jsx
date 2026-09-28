@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, FileUp } from "lucide-react";
 
 const empty = {
   applicantName: "",
@@ -195,13 +195,14 @@ export default function ApplicantModal({ open, applicant, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-brand-blue-900/50 p-4 backdrop-blur-sm">
-      <div className="mx-auto my-4 max-w-5xl rounded-3xl bg-white shadow-2xl">
-        <div className="sticky top-0 z-10 rounded-t-3xl border-b border-slate-200 bg-white px-5 py-4">
+    <div className="applicant-modal fixed inset-0 z-50 overflow-y-auto bg-brand-blue-900/50 p-4 backdrop-blur-sm">
+      <div className="applicant-dialog mx-auto my-4 max-w-5xl rounded-3xl bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="applicant-dialog-title">
+        <div className="applicant-dialog-header sticky top-0 z-10 rounded-t-3xl border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-extrabold uppercase text-slate-900">{applicant ? "Edit Applicant" : "Add Applicant"}</h2>
-              <p className="text-xs font-bold text-slate-500">Complete the recruitment tracking information.</p>
+              <p className="applicant-form-eyebrow">THE CANDIDATE JOURNEY</p>
+              <h2 id="applicant-dialog-title" className="text-lg font-extrabold uppercase text-slate-900">{applicant ? "Edit Applicant" : "Add Applicant"}</h2>
+              <p className="text-xs font-bold text-slate-500">Keep their story and next steps together.</p>
             </div>
             <button aria-label="Close applicant form" onClick={onClose} className="rounded-xl p-2 hover:bg-slate-100"><X size={20} /></button>
           </div>
@@ -217,14 +218,14 @@ export default function ApplicantModal({ open, applicant, onClose, onSave }) {
           </div>
         </div>
 
-        <div className="space-y-5 bg-slate-50/70 p-5 sm:p-7">
+        <div className="applicant-dialog-body space-y-5 bg-slate-50/70 p-5 sm:p-7">
           {stepError && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{stepError}</div>
           )}
 
           <Section title={`${step + 1}. ${currentStep.title}`}>
             {isPreviewStep ? (
-              <div className="space-y-4">
+              <div className="applicant-review space-y-4">
                 <div className="rounded-2xl border border-brand-blue-100 bg-brand-blue-50/70 p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -272,10 +273,23 @@ export default function ApplicantModal({ open, applicant, onClose, onSave }) {
                 />
               ))
             )}
+            {step === 0 && (
+              <div className="resume-upload-field">
+                <div className="resume-upload-heading">
+                  <span>Resume</span>
+                  <span className="resume-coming-soon">Coming Soon</span>
+                </div>
+                <button type="button" disabled className="resume-upload-placeholder" aria-describedby="resume-upload-note">
+                  <FileUp size={22} aria-hidden="true" />
+                  <span>Upload resume <small>PDF only</small></span>
+                </button>
+                <p id="resume-upload-note">Resume uploads will be available soon.</p>
+              </div>
+            )}
           </Section>
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-b-3xl border-t border-slate-200 bg-white px-5 py-4">
+        <div className="applicant-dialog-footer flex items-center justify-between gap-3 rounded-b-3xl border-t border-slate-200 bg-white px-5 py-4">
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
             <button

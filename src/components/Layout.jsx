@@ -2,14 +2,15 @@ import { useState } from "react";
 import { Menu, ChevronRight, CalendarDays, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import "./Workspace.css";
 
 export default function Layout({ children, user, onLogout }) {
   const location = useLocation();
-  const pageName = location.pathname === "/" ? "Overview" : "Applicants";
+  const pageName = location.pathname === "/" ? "Overview" : location.pathname === "/reports" ? "Reports" : "Applicants";
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="app-shell min-h-screen">
+    <div className="app-shell workspace-shell min-h-screen">
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       {mobileOpen && (
         <button

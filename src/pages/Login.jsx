@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
+import "./Login.css";
 import { getUsers } from "../services/api";
 
 const DEMO_ACCOUNT = {
@@ -12,6 +13,7 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState(DEMO_ACCOUNT.password);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -63,131 +65,85 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(116,143,255,0.18),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(23,54,223,0.12),_transparent_28%),linear-gradient(180deg,_#edf3ff_0%,_#f4f7ff_100%)] px-4 py-10">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-[32px] border border-brand-blue-100 bg-white/80 shadow-[0_30px_80px_-40px_rgba(16,33,107,0.45)] backdrop-blur-sm">
-        <div className="grid min-h-[760px] lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="relative overflow-hidden bg-gradient-to-br from-brand-blue-900 via-brand-blue-800 to-brand-blue-600 p-8 text-white md:p-12">
-            <div className="relative z-10 flex h-full flex-col">
-              <div className="flex items-center gap-3">
-                <div className="grid h-16 w-16 place-items-center overflow-hidden shadow-lg">
-                  <img src="/rbm.png" alt="Rural Bank of Medina logo" className="h-full w-full object-cover" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-100">
-                    HR Recruitment System
-                  </p>
-                  <p className="text-sm text-blue-100">Rural Bank of Medina, Inc</p>
-                </div>
-              </div>
-
-              <div className="mt-14 max-w-md">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-100">
-                  <Sparkles size={14} />
-                  Demo access ready
-                </div>
-
-                <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-                  Welcome back to your hiring workspace.
-                </h1>
-
-                <p className="mt-5 max-w-sm text-base leading-7 text-blue-100/90">
-                  Manage applicants, review stages, and keep every hiring decision visible in one place.
-                </p>
-              </div>
-
-              <div className="mt-auto grid gap-4 pt-10 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-md">
-                  <div className="mb-3 flex items-center gap-2 text-brand-yellow-500">
-                    <ShieldCheck size={18} />
-                    <span className="text-xs font-bold uppercase tracking-[0.18em]">Role</span>
-                  </div>
-                  <p className="text-xl font-semibold">Super Admin</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-md">
-                  <div className="mb-3 flex items-center gap-2 text-brand-yellow-500">
-                    <LockKeyhole size={18} />
-                    <span className="text-xs font-bold uppercase tracking-[0.18em]">Demo login</span>
-                  </div>
-                  <p className="text-sm text-blue-100/90">
-                    {DEMO_ACCOUNT.email}<br />
-                    {DEMO_ACCOUNT.password}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center bg-slate-50 p-6 md:p-12">
-            <div className="w-full max-w-md rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_18px_36px_-24px_rgba(16,33,107,0.35)]">
-              <div className="mb-8">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-blue-600">
-                  Secure sign in
-                </p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-                  Login
-                </h2>
-              </div>
-
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="email">
-                    Work email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue-100"
-                    placeholder="superadmin@demo.local"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="password">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue-100"
-                    placeholder="Enter password"
-                  />
-                </div>
-
-                {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_24px_-16px_rgba(23,54,223,0.7)] transition hover:bg-brand-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {busy ? "Signing in..." : "Sign in"}
-                </button>
-              </form>
-
-              <div className="mt-6 rounded-xl bg-brand-blue-50 p-3 text-xs leading-6 text-brand-blue-800">
-                <p className="font-semibold uppercase tracking-[0.16em]">Demo credentials</p>
-                <p className="mt-1">
-                  Email: <span className="font-semibold">superadmin@demo.local</span>
-                </p>
-                <p>
-                  Password: <span className="font-semibold">demo1234</span>
-                </p>
-              </div>
-            </div>
+    <div className="login-page">
+      <header className="login-header">
+        <div className="login-brand">
+          <img src="/rbm.png" alt="Rural Bank of Medina logo" />
+          <div>
+            <p>Rural Bank of Medina</p>
+            <span>HUMAN RESOURCES</span>
           </div>
         </div>
-      </div>
+        <span className="login-workspace-label"><span /> Recruitment workspace</span>
+      </header>
+
+      <main className="login-main">
+        <div className="login-intro">
+          <p className="login-eyebrow">PEOPLE. POTENTIAL. POSSIBILITY.</p>
+          <h1>Great teams start here.</h1>
+          <p>A thoughtful space for every step of your hiring journey.</p>
+        </div>
+
+        <section className="login-card" aria-labelledby="login-heading">
+          <div className="login-card-heading">
+            <span className="login-key-icon"><LockKeyhole size={22} strokeWidth={1.7} aria-hidden="true" /></span>
+            <h2 id="login-heading">Welcome back</h2>
+            <p>Sign in to your recruitment workspace.</p>
+          </div>
+
+          <form className="login-form" onSubmit={handleSubmit} aria-busy={busy}>
+            <div className="login-field">
+              <label htmlFor="email">Work email</label>
+              <div className="login-input-wrap">
+                <Mail size={18} aria-hidden="true" />
+                <input id="email" type="email" autoComplete="username" required
+                  value={email} onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@company.com" spellCheck={false} autoCapitalize="none"
+                  aria-invalid={Boolean(error)} aria-describedby={error ? "login-error" : undefined} />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="password">Password</label>
+              <div className="login-input-wrap">
+                <LockKeyhole size={18} aria-hidden="true" />
+                <input id="password" type={showPassword ? "text" : "password"}
+                  autoComplete="current-password" required value={password}
+                  onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password"
+                  aria-invalid={Boolean(error)} aria-describedby={error ? "login-error" : undefined} />
+                <button className="login-password-toggle" type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && <p id="login-error" className="login-error" role="alert">{error}</p>}
+
+            <button type="submit" disabled={busy} className="login-submit">
+              {busy ? <><LoaderCircle className="login-spinner" size={18} aria-hidden="true" /> Signing in?</> : <>Sign in <ArrowRight size={18} aria-hidden="true" /></>}
+            </button>
+          </form>
+
+          <details className="login-demo">
+            <summary><span className="login-demo-badge">DEMO</span> Explore the workspace</summary>
+            <div className="login-demo-content">
+              <p>Your demo account is already filled in.</p>
+              <dl>
+                <div><dt>Email</dt><dd>{DEMO_ACCOUNT.email}</dd></div>
+                <div><dt>Password</dt><dd>{DEMO_ACCOUNT.password}</dd></div>
+              </dl>
+            </div>
+          </details>
+        </section>
+        <p className="login-access-note">Need access? Contact your HR administrator.</p>
+      </main>
+
+      <footer className="login-footer">
+        <span>? {new Date().getFullYear()} Rural Bank of Medina, Inc.</span>
+        <span>Made for people. Built for progress.</span>
+      </footer>
     </div>
   );
 }

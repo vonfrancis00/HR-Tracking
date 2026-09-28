@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Applicants from "./pages/Applicants";
+import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 
 const AUTH_STORAGE_KEY = "applicant-tracker-user";
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/applicants" element={<Applicants />} />
         <Route path="/applicants/new" element={<Applicants />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
