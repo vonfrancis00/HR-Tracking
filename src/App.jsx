@@ -13,6 +13,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  function handleLogout() {
+    logout().catch(() => {});
+    setUser(null);
+  }
+
   useEffect(() => {
     window.localStorage.removeItem("applicant-tracker-user");
     restoreSession().then(setUser).finally(() => setLoading(false));
@@ -25,7 +30,7 @@ export default function App() {
   }
 
   return (
-    <Layout user={user} onLogout={() => { logout().catch(() => {}); setUser(null); }}>
+    <Layout user={user} onLogout={handleLogout}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/applicants" element={<Applicants />} />

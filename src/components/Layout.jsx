@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Menu, ChevronRight, CalendarDays, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -8,6 +8,7 @@ export default function Layout({ children, user, onLogout }) {
   const location = useLocation();
   const pageName = location.pathname === "/" ? "Overview" : location.pathname === "/reports" ? "Reports" : location.pathname === "/settings" ? "Settings" : "Applicants";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const logoutDialog = useRef(null);
 
   return (
     <div className="app-shell workspace-shell min-h-screen">
@@ -43,7 +44,8 @@ export default function Layout({ children, user, onLogout }) {
             </div>
             <button
               type="button"
-              onClick={onLogout}
+              onClick={() => logoutDialog.current.showModal()}
+              aria-label="Logout"
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-red-600"
             >
               <LogOut size={14} />
@@ -54,6 +56,26 @@ export default function Layout({ children, user, onLogout }) {
 
         <main className="p-4 md:p-8 xl:px-10">{children}</main>
       </div>
+      <dialog
+        ref={logoutDialog}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+        className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-slate-800 shadow-2xl backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) logoutDialog.current.close();
+          }
+        }}
+      >
+        <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-red-50 text-red-600"><LogOut size={24} aria-hidden="true" /></div>
+        <h2 id="logout-dialog-title" className="text-xl font-semibold">Log out of your workspace?</h2>
+        <p id="logout-dialog-description" className="mt-2 text-sm leading-6 text-slate-500">You’ll return to the login page. Sign in again to continue.</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" autoFocus onClick={() => logoutDialog.current.close()} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium hover:bg-slate-50">Cancel</button>
+          <button type="button" onClick={() => { logoutDialog.current.close(); onLogout(); }} className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700">Logout</button>
+        </div>
+      </dialog>
     </div>
   );
 }

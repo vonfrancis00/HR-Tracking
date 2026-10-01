@@ -89,7 +89,7 @@ export default function Login({ onLogin }) {
             {error && <p id="login-error" className="login-error" role="alert">{error}</p>}
 
             <button type="submit" disabled={busy} className="login-submit">
-              {busy ? <><LoaderCircle className="login-spinner" size={18} aria-hidden="true" /> Signing in...</> : <>Sign in <ArrowRight size={18} aria-hidden="true" /></>}
+              {busy ? <><LoaderCircle className="login-spinner" size={18} aria-hidden="true" /> Accessing...</> : <> Access Dashboard <ArrowRight size={18} aria-hidden="true" /></>}
             </button>
           </form>
 
@@ -104,7 +104,7 @@ export default function Login({ onLogin }) {
             </div>
           </details>}
         </section>
-        <p className="login-access-note">Need access? Contact your HR administrator.</p>
+        <p className="login-access-note">Need access? Contact your HR Administrator.</p>
         </div>
       </main>
 
