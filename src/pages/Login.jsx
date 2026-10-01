@@ -40,7 +40,7 @@ export default function Login({ onLogin }) {
             <span>HUMAN RESOURCES</span>
           </div>
         </div>
-        <span className="login-workspace-label"><span /> Recruitment workspace</span>
+        <span className="login-workspace-label"><span /> Recruitment Workspace</span>
       </header>
 
       <main className="login-main">
@@ -50,6 +50,7 @@ export default function Login({ onLogin }) {
           <p>A thoughtful space for every step of your hiring journey.</p>
         </div>
 
+        <div className="login-panel">
         <section className="login-card" aria-labelledby="login-heading">
           <div className="login-card-heading">
             <span className="login-key-icon"><LockKeyhole size={22} strokeWidth={1.7} aria-hidden="true" /></span>
@@ -104,6 +105,7 @@ export default function Login({ onLogin }) {
           </details>}
         </section>
         <p className="login-access-note">Need access? Contact your HR administrator.</p>
+        </div>
       </main>
 
       <footer className="login-footer">
